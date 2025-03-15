@@ -1,0 +1,2475 @@
+{
+	"info": {
+		"_postman_id": "6e15537e-7b59-49d6-8b56-86ba4bc7ed12",
+		"name": "GESTION",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "22504789",
+		"_collection_link": "https://www.postman.com/dark-firefly-608066/gestion/collection/e0zo2a1/gestion?action=share&source=collection_link&creator=22504789"
+	},
+	"item": [
+		{
+			"name": "AUTH USER ADM",
+			"item": [
+				{
+					"name": "User Admin Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const body=pm.response.json();\r",
+									"\r",
+									"const tokenAdmin=body.token;\r",
+									"\r",
+									"console.log(tokenAdmin)\r",
+									"\r",
+									"pm.collectionVariables.set(\"Token Admin\", tokenAdmin)"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"appgestion_qa@apoyarte.com\",\r\n  \"password\": \"appgestion_qa_2025\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/userlogin",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"userlogin"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "USER",
+			"item": [
+				{
+					"name": "REGISTER",
+					"item": [
+						{
+							"name": "ADM",
+							"item": [
+								{
+									"name": "Chequear si ya hay un Administrador registrado",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"¿Ya hay registrado algun administrador?\", function () {\r",
+													"    var body = pm.response.json();\r",
+													"    pm.expect(body.hasAdministrator).to.eql(true);\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{URL}}/usercheckadmin",
+											"host": [
+												"{{URL}}"
+											],
+											"path": [
+												"usercheckadmin"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Validar la cantidad de Administradores que hay registrados",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"let body = pm.response.json();\r",
+													"let totalAdm = 0;\r",
+													"\r",
+													"body.data.forEach(user => {\r",
+													"    if (user.userRole === \"administrator\") {\r",
+													"        totalAdm++;\r",
+													"    }\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Solo hay un administrador registrado\", function () {\r",
+													"    pm.expect(totalAdm).to.equal(1);\r",
+													"});\r",
+													" "
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{Token Admin}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{URL}}/user",
+											"host": [
+												"{{URL}}"
+											],
+											"path": [
+												"user"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Intento de Registro de Adm cuando ya hay uno en la base de datos",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Validar que no se permite registrar a un segundo usuario\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{Token Admin}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"userName\": \"Administrador\",\r\n  \"userLastName\": \"Secundario\",\r\n  \"userEmail\": \"admsecundario@gmail.com\",\r\n  \"userRole\": \"Administrador\",\r\n  \"userPassword\": \"AdmSecundario\"\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{URL}}/user",
+											"host": [
+												"{{URL}}"
+											],
+											"path": [
+												"user"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Intento de Registro de Adm ingresando credenciales ya en uso",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Validar que solo se registren Supervisores o Tecnicos\", function () {\r",
+													"    pm.expect(pm.response.text()).to.include(\"El rol debe ser supervisor o técnico\");\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Validar que no se permite registro de Administrador con credenciales ya en uso\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{Token Admin}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"userName\": \"Supervisor\",\r\n  \"userLastName\": \"Principal\",\r\n  \"userEmail\": \"appgestion_qa@apoyarte.com\",\r\n  \"userRole\": \"administrador\",\r\n  \"userPassword\": \"appgestion_qa_2025\"\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{URL}}/user",
+											"host": [
+												"{{URL}}"
+											],
+											"path": [
+												"user"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "SUP",
+							"item": [
+								{
+									"name": "CRUD SUP",
+									"item": [
+										{
+											"name": "Registro exitoso",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Registro de Supervisor exitoso\", function () {\r",
+															"    pm.response.to.have.status(201);\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\r\n  \"userName\": \"{{nombreSupervisor}}\",\r\n  \"userLastName\": \"{{apellidoSupervisor}}\",\r\n  \"userEmail\": \"{{emailSupervisor}}\",\r\n  \"userRole\": \"supervisor\",\r\n  \"userPassword\": \"{{contraseñaSupervisor}}\"\r\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{URL}}/user",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Listado de Supervisores",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"\r",
+															"const body = pm.response.json();\r",
+															"const users = body.data;\r",
+															"let emailSup = pm.collectionVariables.get(\"emailSupervisor\");\r",
+															"\r",
+															"const user = users.find(user => user.userEmail === emailSup);\r",
+															"\r",
+															"if (user) {\r",
+															"    const idSupervisor=user._id;\r",
+															"    console.log(idSupervisor); \r",
+															"    const tokenConfirmacionCuentaSup=user.userConfirmationToken;\r",
+															"   \r",
+															"pm.collectionVariables.set(\"Token Cuenta Sup\", tokenConfirmacionCuentaSup)\r",
+															"pm.collectionVariables.set(\"Id Supervisor\", idSupervisor)\r",
+															"\r",
+															"} else {\r",
+															"    console.log(\"Usuario no encontrado\");\r",
+															"}\r",
+															"\r",
+															"pm.test(\"Validar que solo liste a usuarios Supervisores\", function () {\r",
+															"    var body = pm.response.json().data;\r",
+															"    body.forEach(function(user) {\r",
+															"        pm.expect(user.userRole).to.equal(\"supervisor\");\r",
+															"    });\r",
+															"});\r",
+															"\r",
+															"\r",
+															""
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "GET",
+												"header": [],
+												"url": {
+													"raw": "{{URL}}/usersupervisor",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"usersupervisor"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Confirmacion de usuario.",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Validar la correcta confirmacion de la cuenta\", function () {\r",
+															"    pm.expect(pm.response.text()).to.include(\"User confirm successfully\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "PATCH",
+												"header": [],
+												"url": {
+													"raw": "{{URL}}/userconfirm?token={{Token Cuenta Sup}}&email={{emailSupervisor}}&password=Rachel123",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"userconfirm"
+													],
+													"query": [
+														{
+															"key": "token",
+															"value": "{{Token Cuenta Sup}}"
+														},
+														{
+															"key": "email",
+															"value": "{{emailSupervisor}}"
+														},
+														{
+															"key": "password",
+															"value": "Rachel123"
+														}
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Actualizar usuario",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Validar la correcta actualizacion de datos\", function () {\r",
+															"    pm.expect(pm.response.text()).to.include(\"Usuario actualizado\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "PATCH",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\r\n  \"userName\": \"Rachel Karen\"\r\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{URL}}/user/:id",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user",
+														":id"
+													],
+													"variable": [
+														{
+															"key": "id",
+															"value": "{{Id Supervisor}}"
+														}
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Obtener Supervisor segun Id",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Obtener un ususario segun el Id\", function () {\r",
+															"    pm.expect(pm.response.text()).to.include(\"Encontrado usuario\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "GET",
+												"header": [],
+												"url": {
+													"raw": "{{URL}}/user/:id",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user",
+														":id"
+													],
+													"variable": [
+														{
+															"key": "id",
+															"value": "{{Id Supervisor}}"
+														}
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Borrar usuario segun Id",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Eliminar ususario correctamente\", function () {\r",
+															"    pm.expect(pm.response.text()).to.include(\"Usuario eliminado\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "DELETE",
+												"header": [],
+												"url": {
+													"raw": "{{URL}}/user/:id?userDeletionCause=justa causa",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user",
+														":id"
+													],
+													"query": [
+														{
+															"key": "userDeletionCause",
+															"value": "justa causa",
+															"description": "justa causa"
+														}
+													],
+													"variable": [
+														{
+															"key": "id",
+															"value": "{{Id Supervisor}}"
+														}
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Validar si el usuario fue correctamente eliminado",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Chequear si el usuario se elimino correctamente\", function () {\r",
+															"    var body = pm.response.json();\r",
+															"    pm.expect(body.ok).to.be.false;\r",
+															"    pm.expect(body.message).to.include(\"No fue encontrado usuario \");\r",
+															"});\r",
+															""
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "GET",
+												"header": [],
+												"url": {
+													"raw": "{{URL}}/user/:id",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user",
+														":id"
+													],
+													"variable": [
+														{
+															"key": "id",
+															"value": "{{Id Supervisor}}"
+														}
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								},
+								{
+									"name": "CASES",
+									"item": [
+										{
+											"name": "Intento de registro ingresando credenciales ya en uso",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Validar el NO Registro ingresando credenciales ya en uso\", function () {\r",
+															"    pm.expect(pm.response.text()).to.include(\"Ya existe registro con este email\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\r\n  \"userName\": \"{{nombreSupervisor}}\",\r\n  \"userLastName\": \"{{apellidoSupervisor}}\",\r\n  \"userEmail\": \"{{emailSupervisor}}\",\r\n  \"userRole\": \"supervisor\",\r\n  \"userPassword\": \"{{contraseñaSupervisor}}\"\r\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{URL}}/user",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Intento de registro ingresando valores de formato incorrecto",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Validar el NO registro ingresando valores de formato incorrecto\", function () {\r",
+															"    pm.response.to.have.status(400);\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\r\n  \"userName\": \"{{nombreIncorrectoSup}}\",\r\n  \"userLastName\": \"{{apellidoIncorrectSup}}\",\r\n  \"userEmail\": \"{{emailSupervisor1}}\",\r\n  \"userRole\": \"supervisor\",\r\n  \"userPassword\": \"{{contraseñaIncorrectaSup}}\"\r\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{URL}}/user",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Intento de registro ingresando un email de formato incorrecto",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"\r",
+															"pm.test(\"Validar el NO registro ingresando un email de formato incorrecto\", function () {\r",
+															"    pm.response.to.have.status(500);\r",
+															"    pm.response.to.have.jsonBody(\"ok\", false);\r",
+															"    pm.response.to.have.jsonBody(\"error\", \"Error interno del servidor undefined User validation failed: userEmail: pepe.gmail.com no es un email válido!\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\r\n  \"userName\": \"PEPE\",\r\n  \"userLastName\": \"ARGENTO\",\r\n  \"userEmail\": \"{{emailIncorrectoSup}}\",\r\n  \"userRole\": \"supervisor\",\r\n  \"userPassword\": \"PEPE123\"\r\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{URL}}/user",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Intento de registro dejando campos sin completar",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Validar el NO Registro dejando campos sin completar\", function () {\r",
+															"    pm.expect(pm.response.text()).to.include(\"false\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\r\n  \"userName\": \"\",\r\n  \"userLastName\": \"\",\r\n  \"userEmail\": \"\",\r\n  \"userRole\": \"supervisor\",\r\n  \"userPassword\": \"\"\r\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{URL}}/user",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Intento de registro ingresando la cantidad incorrecta de caracteres",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Validar el NO Registro con las cantidad incorrecta de caracteres\", function () {\r",
+															"    pm.expect(pm.response.text()).to.include(\"false\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\r\n  \"userName\": \"{{nombreCaracteresInco}}\",\r\n  \"userLastName\": \"{{apellidoCaracteresInco}}\",\r\n  \"userEmail\": \"aldo@gmail.com\",\r\n  \"userRole\": \"supervisor\",\r\n  \"userPassword\": \"{{contraseñaCaracteresInco}}\"\r\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{URL}}/user",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user"
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								}
+							]
+						},
+						{
+							"name": "TEC",
+							"item": [
+								{
+									"name": "CRUD TEC",
+									"item": [
+										{
+											"name": "Registro exitoso",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Registro de Tecnico exitoso\", function () {\r",
+															"    pm.response.to.have.status(201);\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\r\n  \"userName\": \"{{nombreTecnico}}\",\r\n  \"userLastName\": \"{{apellidoTecnico}}\",\r\n  \"userEmail\": \"{{emailTecnico}}\",\r\n  \"userRole\": \"technician\",\r\n  \"userPassword\": \"{{contraseñaTecnico}}\"\r\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{URL}}/user",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Listado de Tecnicos",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"\r",
+															"const body = pm.response.json();\r",
+															"const users = body.data;\r",
+															"let emailTec = pm.collectionVariables.get(\"emailTecnico\");\r",
+															"\r",
+															"const user = users.find(user => user.userEmail === emailTec);\r",
+															"\r",
+															"if (user) {\r",
+															"    const idTec=user._id;\r",
+															"    console.log(idTec); \r",
+															"    const tokenConfirmacionCuentaTec=user.userConfirmationToken;\r",
+															"   \r",
+															"pm.collectionVariables.set(\"Token Cuenta Tec\", tokenConfirmacionCuentaTec)\r",
+															"pm.collectionVariables.set(\"Id Tec\", idTec)\r",
+															"\r",
+															"} else {\r",
+															"    console.log(\"Usuario no encontrado\");\r",
+															"}\r",
+															"\r",
+															"\r",
+															"pm.test(\"Validar que solo liste a usuarios Tecnicos\", function () {\r",
+															"    var body = pm.response.json().data;\r",
+															"    body.forEach(function(user) {\r",
+															"        pm.expect(user.userRole).to.equal(\"technician\");\r",
+															"    });\r",
+															"});\r",
+															"\r",
+															"\r",
+															""
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "GET",
+												"header": [],
+												"url": {
+													"raw": "{{URL}}/usertechnician",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"usertechnician"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Confirmacion de usuario.",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Validar la correcta confirmacion de la cuenta\", function () {\r",
+															"    pm.expect(pm.response.text()).to.include(\"User confirm successfully\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "PATCH",
+												"header": [],
+												"url": {
+													"raw": "{{URL}}/userconfirm?token={{Token Cuenta Tec}}&email={{emailTecnico}}&password=Chandler123",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"userconfirm"
+													],
+													"query": [
+														{
+															"key": "token",
+															"value": "{{Token Cuenta Tec}}"
+														},
+														{
+															"key": "email",
+															"value": "{{emailTecnico}}"
+														},
+														{
+															"key": "password",
+															"value": "Chandler123"
+														}
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Actualizar usuario",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Validar la correcta actualizacion de datos\", function () {\r",
+															"    pm.expect(pm.response.text()).to.include(\"Usuario actualizado\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "PATCH",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\r\n  \"userName\": \"Chandler Muriel\"\r\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{URL}}/user/:id",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user",
+														":id"
+													],
+													"variable": [
+														{
+															"key": "id",
+															"value": "{{Id Tecnico}}"
+														}
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Obtener Tecnico  segun Id",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Obtener un tec segun el Id\", function () {\r",
+															"    pm.expect(pm.response.text()).to.include(\"Encontrado usuario\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "GET",
+												"header": [],
+												"url": {
+													"raw": "{{URL}}/user/:id",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user",
+														":id"
+													],
+													"variable": [
+														{
+															"key": "id",
+															"value": "{{Id Supervisor}}"
+														}
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Borrar usuarion segun Id",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Eliminar tec correctamente\", function () {\r",
+															"    pm.expect(pm.response.text()).to.include(\"Usuario eliminado\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "DELETE",
+												"header": [],
+												"url": {
+													"raw": "{{URL}}/user/:id?userDeletionCause=justa causa",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user",
+														":id"
+													],
+													"query": [
+														{
+															"key": "userDeletionCause",
+															"value": "justa causa",
+															"description": "justa causa"
+														}
+													],
+													"variable": [
+														{
+															"key": "id",
+															"value": "{{Id Tecnico}}"
+														}
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Borrar usuarion segun Id Copy",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Eliminar tec correctamente\", function () {\r",
+															"    pm.expect(pm.response.text()).to.include(\"Usuario eliminado\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "DELETE",
+												"header": [],
+												"url": {
+													"raw": "{{URL}}/user/:id?userDeletionCause=justa causa",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user",
+														":id"
+													],
+													"query": [
+														{
+															"key": "userDeletionCause",
+															"value": "justa causa",
+															"description": "justa causa"
+														}
+													],
+													"variable": [
+														{
+															"key": "id",
+															"value": "678adf322f9eead1f21f7135"
+														}
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Validar si el usuario fue correctamente eliminado",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Chequear si el tec se elimino correctamente\", function () {\r",
+															"    var body = pm.response.json();\r",
+															"    pm.expect(body.ok).to.be.false;\r",
+															"    pm.expect(body.message).to.include(\"No fue encontrado usuario \");\r",
+															"});\r",
+															""
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "GET",
+												"header": [],
+												"url": {
+													"raw": "{{URL}}/user/:id",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user",
+														":id"
+													],
+													"variable": [
+														{
+															"key": "id",
+															"value": "{{Id Tecnico}}"
+														}
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								},
+								{
+									"name": "CASES",
+									"item": [
+										{
+											"name": "Intento de registro ingresando credenciales ya en uso",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Validar el NO Registro ingresando credenciales ya en uso\", function () {\r",
+															"    pm.expect(pm.response.text()).to.include(\"Ya existe registro con este email\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\r\n  \"userName\": \"{{nombreSupervisor}}\",\r\n  \"userLastName\": \"{{apellidoSupervisor}}\",\r\n  \"userEmail\": \"{{emailSupervisor}}\",\r\n  \"userRole\": \"supervisor\",\r\n  \"userPassword\": \"{{contraseñaSupervisor}}\"\r\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{URL}}/user",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Intento de registro ingresando valores de formato incorrecto",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Validar el NO registro ingresando valores de formato incorrecto\", function () {\r",
+															"    pm.response.to.have.status(400);\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\r\n  \"userName\": \"{{$randomFullName}}\",\r\n  \"userLastName\": \"{{$randomLastName}}\",\r\n  \"userEmail\": \"{{$randomEmail}}\",\r\n  \"userRole\": \"supervisor\",\r\n  \"userPassword\": \"{{$randomPassword}}\"\r\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{URL}}/user",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Intento de registro ingresando un email de formato incorrecto",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"\r",
+															"pm.test(\"Validar el NO registro ingresando un email de formato incorrecto\", function () {\r",
+															"    pm.response.to.have.status(500);\r",
+															"    pm.response.to.have.jsonBody(\"ok\", false);\r",
+															"    pm.response.to.have.jsonBody(\"error\", \"Error interno del servidor undefined User validation failed: userEmail: pepe.gmail.com no es un email válido!\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\r\n  \"userName\": \"PEPE\",\r\n  \"userLastName\": \"ARGENTO\",\r\n  \"userEmail\": \"{{emailIncorrectoSup}}\",\r\n  \"userRole\": \"supervisor\",\r\n  \"userPassword\": \"PEPE123\"\r\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{URL}}/user",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Intento de registro dejando campos sin completar",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Validar el NO Registro dejando campos sin completar\", function () {\r",
+															"    pm.expect(pm.response.text()).to.include(\"false\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\r\n  \"userName\": \"\",\r\n  \"userLastName\": \"\",\r\n  \"userEmail\": \"\",\r\n  \"userRole\": \"supervisor\",\r\n  \"userPassword\": \"\"\r\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{URL}}/user",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "Intento de registro ingresando la cantidad incorrecta de caracteres",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"pm.test(\"Validar el NO Registro con las cantidad incorrecta de caracteres\", function () {\r",
+															"    pm.expect(pm.response.text()).to.include(\"false\");\r",
+															"});"
+														],
+														"type": "text/javascript",
+														"packages": {}
+													}
+												}
+											],
+											"request": {
+												"auth": {
+													"type": "bearer",
+													"bearer": [
+														{
+															"key": "token",
+															"value": "{{Token Admin}}",
+															"type": "string"
+														}
+													]
+												},
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\r\n  \"userName\": \"{{nombreCaracteresInco}}\",\r\n  \"userLastName\": \"{{apellidoCaracteresInco}}\",\r\n  \"userEmail\": \"aldo@gmail.com\",\r\n  \"userRole\": \"supervisor\",\r\n  \"userPassword\": \"{{contraseñaCaracteresInco}}\"\r\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{URL}}/user",
+													"host": [
+														"{{URL}}"
+													],
+													"path": [
+														"user"
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								}
+							]
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "CLIENT",
+			"item": [
+				{
+					"name": "CRUD CLIENTE",
+					"item": [
+						{
+							"name": "Registro de cliente exitoso",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Registro de Cliente exitoso\", function () {\r",
+											"    pm.response.to.have.status(201);\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{Token Admin}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"clientEmail\": \"{{clientEmail}}\",\r\n  \"clientCompanyName\": \"{{clientCompanyName}}\",\r\n  \"clientContactPerson\": \"{{clientContactPerson}}\",\r\n  \"clientPhone\": \"{{clientPhone}}\",\r\n  \"clientAddress\": \"{{clientAdress}}\",\r\n  \"clientGeoLocation\": {\r\n    \"type\": \"Point\",\r\n    \"coordinates\": [\r\n      -58.3816,\r\n      -34.6037\r\n    ]\r\n  }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{URL}}/client",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"client"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Listado de clientes",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"\r",
+											"const body = pm.response.json();\r",
+											"const clients = body.data;\r",
+											"let emailClient = pm.collectionVariables.get(\"clientEmail\");\r",
+											"\r",
+											"const client = clients.find(client => client.clientEmail === emailClient);\r",
+											"\r",
+											"if (client) {\r",
+											"    const idClient=client._id;\r",
+											"    console.log(idClient); \r",
+											"   \r",
+											"pm.collectionVariables.set(\"Id Cliente\", idClient)\r",
+											"\r",
+											"} else {\r",
+											"    console.log(\"Cliente no encontrado\");\r",
+											"}\r",
+											"\r",
+											"\r",
+											"pm.test(\"Validar que solo liste a los clientes\", function () {\r",
+											"    pm.expect(pm.response.text()).to.include(\"Clientes encontrados\");\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{Token Admin}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{URL}}/client",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"client"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Actualizar datos de cliente segun Id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Validar la correcta actualizacion de datos\", function () {\r",
+											"    pm.expect(pm.response.text()).to.include(\"Cliente actualizado\");\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{Token Admin}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"clientEmail\": \"{{clientEmail}}\",\r\n  \"clientCompanyName\": \"{{clientCompanyName}}\",\r\n  \"clientContactPerson\": \"{{clientContactPerson}}\",\r\n  \"clientPhone\": \"{{clientPhone}}\",\r\n  \"clientAddress\": \"{{clientAdress}}\",\r\n  \"clientGeoLocation\": {\r\n    \"type\": \"Point\",\r\n    \"coordinates\": [\r\n      -58.3816,\r\n      -34.6037\r\n    ]\r\n  }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{URL}}/client/:id",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"client",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{Id Cliente}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Obtener cliente segun Id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"VaLidar la correcta busqueda de clientes segun Id\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{Token Admin}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{URL}}/client/:id",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"client",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{Id Cliente}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Obtener cliente segun Email",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"VaLidar la correcta busqueda de clientes segun el Email\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{Token Admin}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{URL}}/clientbyemail?clientEmail={{clientEmail}}",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"clientbyemail"
+									],
+									"query": [
+										{
+											"key": "clientEmail",
+											"value": "{{clientEmail}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Obtener cliente segun el nombre de la compañia.",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"VaLidar la correcta busqueda de clientes segun el nombre de la compañia\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{Token Admin}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{URL}}/clientbycompanyname?clientCompanyName={{clientCompanyName}}",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"clientbycompanyname"
+									],
+									"query": [
+										{
+											"key": "clientCompanyName",
+											"value": "{{clientCompanyName}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Busqueda de cliente",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{Token Admin}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{URL}}/clientsearch",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"clientsearch"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Borrar cliente segun Id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Eliminar cliente correctamente\", function () {\r",
+											"    pm.expect(pm.response.text()).to.include(\"Cliente eliminado\");\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{Token Admin}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{URL}}/client/:id",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"client",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{Id Cliente}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Validar si el cliente se elimino correctamente",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Chequear si el cliente se elimino correctamente\", function () {\r",
+											"    var body = pm.response.json();\r",
+											"    pm.expect(body.ok).to.be.false;\r",
+											"\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{Token Admin}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{URL}}/clientbyemail?id={{Id Cliente}}",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"clientbyemail"
+									],
+									"query": [
+										{
+											"key": "id",
+											"value": "{{Id Cliente}}"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "REGISTER",
+					"item": [
+						{
+							"name": "CASES",
+							"item": [
+								{
+									"name": "Intento de registro dejando campos sin completar",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Validar el NO Registro dejando campos sin completar\", function () {\r",
+													"    pm.expect(pm.response.text()).to.include(\"false\");\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{Token Admin}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"clientEmail\": \"\",\r\n  \"clientCompanyName\": \"\",\r\n  \"clientContactPerson\": \"\",\r\n  \"clientPhone\": 5491123456789,\r\n  \"clientAddress\": \"Calle Falsa 123\",\r\n  \"clientGeoLocation\": {\r\n    \"type\": \"Point\",\r\n    \"coordinates\": [\r\n      -58.3816,\r\n      -34.6037\r\n    ]\r\n  }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{URL}}/client",
+											"host": [
+												"{{URL}}"
+											],
+											"path": [
+												"client"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Intento de registro ingresando credenciales ya en uso",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Intento de registro con credenciales ya en uso\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{Token Admin}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"clientEmail\": \"{{clientEmail}}\",\r\n  \"clientCompanyName\": \"{{clientCompanyName}}\",\r\n  \"clientContactPerson\": \"{{clientContactPerson}}\",\r\n  \"clientPhone\": \"{{clientPhone}}\",\r\n  \"clientAddress\": \"{{clientAdress}}\",\r\n  \"clientGeoLocation\": {\r\n    \"type\": \"Point\",\r\n    \"coordinates\": [\r\n      -58.3816,\r\n      -34.6037\r\n    ]\r\n  }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{URL}}/client",
+											"host": [
+												"{{URL}}"
+											],
+											"path": [
+												"client"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Intento de registro ingresando un email de formato incorrecto",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Intento de registro con un email de formato incorrecto\", function () {\r",
+													"    pm.expect(pm.response.text()).to.include(\"Error al crear cliente\");\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{Token Admin}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"clientEmail\": \"gunther.com\",\r\n  \"clientCompanyName\": \"{{clientCompanyName}}\",\r\n  \"clientContactPerson\": \"{{clientContactPerson}}\",\r\n  \"clientPhone\": \"{{clientPhone}}\",\r\n  \"clientAddress\": \"{{clientAdress}}\",\r\n  \"clientGeoLocation\": {\r\n    \"type\": \"Point\",\r\n    \"coordinates\": [\r\n      -58.3816,\r\n      -34.6037\r\n    ]\r\n  }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{URL}}/client",
+											"host": [
+												"{{URL}}"
+											],
+											"path": [
+												"client"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Intento de registro ingresando la cantidad incorrecta de caracteres",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Intento de registro con un email de formato incorrecto\", function () {\r",
+													"    pm.expect(pm.response.text()).to.include(\"Error al crear cliente\");\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{Token Admin}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"clientEmail\": \"{{$randomEmail}}\",\r\n  \"clientCompanyName\": \"AR\",\r\n  \"clientContactPerson\": \"BI\",\r\n  \"clientPhone\": \"91\",\r\n  \"clientAddress\": \"13\",\r\n  \"clientGeoLocation\": {\r\n    \"type\": \"Point\",\r\n    \"coordinates\": [\r\n      -58.3816,\r\n      -34.6037\r\n    ]\r\n  }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{URL}}/client",
+											"host": [
+												"{{URL}}"
+											],
+											"path": [
+												"client"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "url",
+			"value": "https://ftg-team-26-backend-preview.vercel.app/api",
+			"disabled": true
+		},
+		{
+			"key": "Token Admin",
+			"value": ""
+		},
+		{
+			"key": "Token Cuenta Sup",
+			"value": ""
+		},
+		{
+			"key": "nombreSupervisor",
+			"value": "Rachel",
+			"type": "default"
+		},
+		{
+			"key": "apellidoSupervisor",
+			"value": "Green",
+			"type": "default"
+		},
+		{
+			"key": "emailSupervisor",
+			"value": "rachel@gmail.com",
+			"type": "default"
+		},
+		{
+			"key": "contraseñaSupervisor",
+			"value": "Rachel123",
+			"type": "default"
+		},
+		{
+			"key": "Id Supervisor",
+			"value": ""
+		},
+		{
+			"key": "nombreIncorrectoSup",
+			"value": "Rachel!!!",
+			"type": "default"
+		},
+		{
+			"key": "apellidoIncorrectSup",
+			"value": "Green!!!",
+			"type": "default"
+		},
+		{
+			"key": "contraseñaIncorrectaSup",
+			"value": "Rachel123!!!",
+			"type": "default"
+		},
+		{
+			"key": "emailSupervisor1",
+			"value": "rachel1@gmail.com",
+			"type": "default"
+		},
+		{
+			"key": "emailIncorrectoSup",
+			"value": "rachel.gmail.com",
+			"type": "default"
+		},
+		{
+			"key": "nombreCaracteresInco",
+			"value": "Al",
+			"type": "default"
+		},
+		{
+			"key": "apellidoCaracteresInco",
+			"value": "Do",
+			"type": "default"
+		},
+		{
+			"key": "contraseñaCaracteresInco",
+			"value": "Al1",
+			"type": "default"
+		},
+		{
+			"key": "id",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "nombreTecnico",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "emailTecnico",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "apellidoTecnico",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "contraseñaTecnico",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "nombreIncorrectoTec",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "apellidoIncorrectoTec",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "emailTec1",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "contraseñaIncorrectaTec",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "Token Cuenta Tec",
+			"value": ""
+		},
+		{
+			"key": "Id Tecnico",
+			"value": ""
+		},
+		{
+			"key": "Id Tec",
+			"value": ""
+		},
+		{
+			"key": "clientEmail",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "clientCompanyName",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "clientContactPerson",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "clientPhone",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "clientAdress",
+			"value": "Calle Falsa 123",
+			"type": "default"
+		},
+		{
+			"key": "Id Cliente",
+			"value": ""
+		}
+	]
+}
